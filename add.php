@@ -5,34 +5,52 @@ $message = "";
 
 if(isset($_POST['save']))
 {
-    $name = mysqli_real_escape_string($conn,$_POST['employee_name']);
-    $department = mysqli_real_escape_string($conn,$_POST['department']);
-    $designation = mysqli_real_escape_string($conn,$_POST['designation']);
-    $email = mysqli_real_escape_string($conn,$_POST['email']);
-    $phone = mysqli_real_escape_string($conn,$_POST['phone']);
-    $salary = mysqli_real_escape_string($conn,$_POST['salary']);
-    $joining = mysqli_real_escape_string($conn,$_POST['joining_date']);
+    $employee_name = trim($_POST['employee_name']);
+    $department    = trim($_POST['department']);
+    $designation   = trim($_POST['designation']);
+    $email         = trim($_POST['email']);
+    $phone         = trim($_POST['phone']);
 
-    $sql = "INSERT INTO employees
-    (employee_name,department,designation,email,phone,salary,joining_date)
-    VALUES
-    ('$name','$department','$designation','$email','$phone','$salary','$joining')";
+    $salary = ($_POST['salary'] == "") ? NULL : $_POST['salary'];
+    $joining_date = ($_POST['joining_date'] == "") ? NULL : $_POST['joining_date'];
 
-    if(mysqli_query($conn,$sql))
+    $stmt = mysqli_prepare($conn,
+    "INSERT INTO employees
+    (employee_name, department, designation, email, phone, salary, joining_date)
+    VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+    mysqli_stmt_bind_param(
+        $stmt,
+        "sssssss",
+        $employee_name,
+        $department,
+        $designation,
+        $email,
+        $phone,
+        $salary,
+        $joining_date
+    );
+
+    if(mysqli_stmt_execute($stmt))
     {
-        header("Location:index.php?msg=added");
+        header("Location: index.php?msg=added");
         exit();
     }
     else
     {
-        $message = "Unable to save employee.";
+        $message = mysqli_error($conn);
     }
+
+    mysqli_stmt_close($stmt);
 }
 ?>
 
 <!DOCTYPE html>
 <html>
+
 <head>
+
+<meta charset="UTF-8">
 
 <title>Add Employee</title>
 
@@ -48,9 +66,9 @@ if(isset($_POST['save']))
 
 <div class="card shadow">
 
-<div class="card-header bg-primary text-white">
+<div class="card-header bg-success text-white">
 
-<h3>Add New Employee</h3>
+<h3>Add Employee</h3>
 
 </div>
 
@@ -69,26 +87,30 @@ if($message!="")
 
 <div class="col-md-6 mb-3">
 
-<label>Employee Name</label>
+<label class="form-label">Employee Name</label>
 
-<input type="text" class="form-control" name="employee_name" required>
+<input
+type="text"
+name="employee_name"
+class="form-control"
+required>
 
 </div>
 
 <div class="col-md-6 mb-3">
 
-<label>Department</label>
+<label class="form-label">Department</label>
 
-<select class="form-select" name="department" required>
+<select
+name="department"
+class="form-select"
+required>
 
+<option value="">Select Department</option>
 <option>IT</option>
-
 <option>HR</option>
-
 <option>Finance</option>
-
 <option>Sales</option>
-
 <option>Marketing</option>
 
 </select>
@@ -101,17 +123,25 @@ if($message!="")
 
 <div class="col-md-6 mb-3">
 
-<label>Designation</label>
+<label class="form-label">Designation</label>
 
-<input type="text" class="form-control" name="designation" required>
+<input
+type="text"
+name="designation"
+class="form-control"
+required>
 
 </div>
 
 <div class="col-md-6 mb-3">
 
-<label>Email</label>
+<label class="form-label">Email</label>
 
-<input type="email" class="form-control" name="email" required>
+<input
+type="email"
+name="email"
+class="form-control"
+required>
 
 </div>
 
@@ -121,17 +151,26 @@ if($message!="")
 
 <div class="col-md-6 mb-3">
 
-<label>Phone</label>
+<label class="form-label">Phone</label>
 
-<input type="text" class="form-control" name="phone">
+<input
+type="text"
+name="phone"
+class="form-control"
+placeholder="9876543210">
 
 </div>
 
 <div class="col-md-6 mb-3">
 
-<label>Salary</label>
+<label class="form-label">Salary</label>
 
-<input type="number" class="form-control" name="salary">
+<input
+type="number"
+step="0.01"
+name="salary"
+class="form-control"
+placeholder="50000">
 
 </div>
 
@@ -141,21 +180,29 @@ if($message!="")
 
 <div class="col-md-6 mb-3">
 
-<label>Joining Date</label>
+<label class="form-label">Joining Date</label>
 
-<input type="date" class="form-control" name="joining_date">
+<input
+type="date"
+name="joining_date"
+class="form-control">
 
 </div>
 
 </div>
 
-<button class="btn btn-success" name="save">
+<button
+type="submit"
+name="save"
+class="btn btn-success">
 
 Save Employee
 
 </button>
 
-<a href="index.php" class="btn btn-secondary">
+<a
+href="index.php"
+class="btn btn-secondary">
 
 Back
 
