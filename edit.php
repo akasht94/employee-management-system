@@ -1,61 +1,79 @@
 <?php
 include 'db.php';
 
-// Check if ID is provided
-if(!isset($_GET['id']))
-{
-    header("Location:index.php");
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+    header("Location: index.php");
     exit();
 }
 
-$id = intval($_GET['id']);
+$id = (int)$_GET['id'];
 
-// Fetch employee details
-$result = mysqli_query($conn,"SELECT * FROM employees WHERE id=$id");
+/* Fetch employee */
+$stmt = mysqli_prepare($conn, "SELECT * FROM employees WHERE id=?");
+mysqli_stmt_bind_param($stmt, "i", $id);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
 
-if(mysqli_num_rows($result)==0)
-{
+if (mysqli_num_rows($result) == 0) {
     die("Employee not found.");
 }
 
 $row = mysqli_fetch_assoc($result);
 
-// Update record
-if(isset($_POST['update']))
-{
-    $name = mysqli_real_escape_string($conn,$_POST['employee_name']);
-    $department = mysqli_real_escape_string($conn,$_POST['department']);
-    $designation = mysqli_real_escape_string($conn,$_POST['designation']);
-    $email = mysqli_real_escape_string($conn,$_POST['email']);
-    $phone = mysqli_real_escape_string($conn,$_POST['phone']);
-    $salary = mysqli_real_escape_string($conn,$_POST['salary']);
-    $joining = mysqli_real_escape_string($conn,$_POST['joining_date']);
+$message = "";
 
-    $sql = "UPDATE employees SET
-            employee_name='$name',
-            department='$department',
-            designation='$designation',
-            email='$email',
-            phone='$phone',
-            salary='$salary',
-            joining_date='$joining'
-            WHERE id=$id";
+/* Update employee */
+if (isset($_POST['update'])) {
 
-    if(mysqli_query($conn,$sql))
-    {
-        header("Location:index.php?msg=updated");
+    $employee_name = trim($_POST['employee_name']);
+    $department    = trim($_POST['department']);
+    $designation   = trim($_POST['designation']);
+    $email         = trim($_POST['email']);
+    $phone         = trim($_POST['phone']);
+
+    $salary = ($_POST['salary'] == "") ? NULL : $_POST['salary'];
+    $joining_date = ($_POST['joining_date'] == "") ? NULL : $_POST['joining_date'];
+
+    $stmt = mysqli_prepare($conn,
+    "UPDATE employees
+    SET
+        employee_name=?,
+        department=?,
+        designation=?,
+        email=?,
+        phone=?,
+        salary=?,
+        joining_date=?
+    WHERE id=?");
+
+    mysqli_stmt_bind_param(
+        $stmt,
+        "sssssssi",
+        $employee_name,
+        $department,
+        $designation,
+        $email,
+        $phone,
+        $salary,
+        $joining_date,
+        $id
+    );
+
+    if (mysqli_stmt_execute($stmt)) {
+        header("Location: index.php?msg=updated");
         exit();
-    }
-    else
-    {
-        echo "<div class='alert alert-danger'>Update Failed.</div>";
+    } else {
+        $message = mysqli_error($conn);
     }
 }
 ?>
 
 <!DOCTYPE html>
 <html>
+
 <head>
+
+<meta charset="UTF-8">
 
 <title>Edit Employee</title>
 
@@ -79,6 +97,13 @@ if(isset($_POST['update']))
 
 <div class="card-body">
 
+<?php
+if($message!="")
+{
+    echo "<div class='alert alert-danger'>$message</div>";
+}
+?>
+
 <form method="POST">
 
 <div class="row">
@@ -91,8 +116,8 @@ if(isset($_POST['update']))
 type="text"
 name="employee_name"
 class="form-control"
-value="<?php echo $row['employee_name']; ?>"
-required>
+required
+value="<?php echo htmlspecialchars($row['employee_name']); ?>">
 
 </div>
 
@@ -102,15 +127,16 @@ required>
 
 <select
 name="department"
-class="form-select">
+class="form-select"
+required>
 
 <?php
-$departments=["IT","HR","Finance","Sales","Marketing"];
+$departments = ["IT","HR","Finance","Sales","Marketing"];
 
 foreach($departments as $dept)
 {
-    $selected = ($dept==$row['department']) ? "selected" : "";
-    echo "<option $selected>$dept</option>";
+    $selected = ($dept == $row['department']) ? "selected" : "";
+    echo "<option value='$dept' $selected>$dept</option>";
 }
 ?>
 
@@ -130,7 +156,8 @@ foreach($departments as $dept)
 type="text"
 name="designation"
 class="form-control"
-value="<?php echo $row['designation']; ?>">
+required
+value="<?php echo htmlspecialchars($row['designation']); ?>">
 
 </div>
 
@@ -142,7 +169,8 @@ value="<?php echo $row['designation']; ?>">
 type="email"
 name="email"
 class="form-control"
-value="<?php echo $row['email']; ?>">
+required
+value="<?php echo htmlspecialchars($row['email']); ?>">
 
 </div>
 
@@ -158,7 +186,7 @@ value="<?php echo $row['email']; ?>">
 type="text"
 name="phone"
 class="form-control"
-value="<?php echo $row['phone']; ?>">
+value="<?php echo htmlspecialchars($row['phone']); ?>">
 
 </div>
 
@@ -168,6 +196,7 @@ value="<?php echo $row['phone']; ?>">
 
 <input
 type="number"
+step="0.01"
 name="salary"
 class="form-control"
 value="<?php echo $row['salary']; ?>">
@@ -192,15 +221,20 @@ value="<?php echo $row['joining_date']; ?>">
 
 </div>
 
-<button class="btn btn-warning" name="update">
+<button
+type="submit"
+name="update"
+class="btn btn-warning">
 
 Update Employee
 
 </button>
 
-<a href="index.php" class="btn btn-secondary">
+<a
+href="index.php"
+class="btn btn-secondary">
 
-Cancel
+Back
 
 </a>
 
