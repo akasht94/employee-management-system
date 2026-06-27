@@ -1,0 +1,32 @@
+body{
+    background:#f4f6f9;
+}
+
+.navbar{
+    margin-bottom:20px;
+}
+
+.card{
+    border:none;
+    border-radius:10px;
+}
+
+.table{
+    background:white;
+}
+
+.btn{
+    border-radius:6px;
+}
+
+h2{
+    font-weight:bold;
+}
+
+.card h2{
+    color:white;
+}
+
+.card.bg-warning h2{
+    color:#212529;
+}
